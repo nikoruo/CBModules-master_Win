@@ -186,3 +186,18 @@ Fact( TemperatureChange,
 /*      printing                                                              */
 /* -------------------------------------------------------------------------- */
 
+Fact( ValidationFile,
+      "Validation codebook file",
+      'A',    1,  INT, 0,    0,   0,      0,     NO,
+      vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9, vf10,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      NO )
+
+/* -------------------------------------------------------------------------- */
+/*    Parameter identifier                                                    */
+/*      key    no   type value  min  max   default   save to file             */
+/*      enum of values                                                        */
+/*      name of values                                                        */
+/*      printing                                                              */
+/* -------------------------------------------------------------------------- */
+

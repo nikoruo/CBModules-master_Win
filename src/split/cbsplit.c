@@ -35,6 +35,8 @@
 #include "split.h"
 #include "interfc.h" 
 
+// Add function declaration for CentroidIndex
+int CentroidIndex(CODEBOOK* CB1, CODEBOOK* CB2);
 
 /*--------------------  Basic type definitions -----------------------*/
 
@@ -196,17 +198,49 @@ int main(int argc, char *argv[]) {
   char InitialCBName[MAXFILENAME] = {0x00};
   char CBName[MAXFILENAME] = {0x00};
   char PAName[MAXFILENAME] = {0x00};
+  char ValidationName[MAXFILENAME] = {0x00};
   SASchedule SAS;
   double FinalError;
   long watch;
 
-  ParameterInfo paraminfo[3] = {{TSetName, FormatNameTS, 0, INFILE},
-                                {InitialCBName, FormatNameCB, 1, INFILE},
-                                {CBName, FormatNameCB, 0, OUTFILE}};
+  // Try parsing with 4 parameters first
+  ParameterInfo paraminfo4[4] = {{TSetName, FormatNameTS, 0, INFILE},
+                                 {InitialCBName, FormatNameCB, 1, INFILE},
+                                 {CBName, FormatNameCB, 0, OUTFILE},
+                                 {ValidationName, FormatNameCB, 0, INFILE}};
 
-  ParseParameters(argc, argv, 3, paraminfo);
+  // Try parsing with 3 parameters as fallback
+  ParameterInfo paraminfo3[3] = {{TSetName, FormatNameTS, 0, INFILE},
+                                 {InitialCBName, FormatNameCB, 1, INFILE},
+                                 {CBName, FormatNameCB, 0, OUTFILE}};
+
+  // Count non-option arguments to determine which parser to use
+  int fileArgCount = 0;
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] != '-') {
+      fileArgCount++;
+    }
+  }
+
+  // Use appropriate parameter parser based on file argument count
+  if (fileArgCount >= 3) {
+    ParseParameters(argc, argv, 4, paraminfo4);
+  } else {
+    ParseParameters(argc, argv, 3, paraminfo3);
+  }
+
   PickFileName(CBName, PAName);
   CheckFileName(PAName, FormatNamePA);
+
+  // Debug: Print all command line arguments
+  if (Value(QuietLevel) >= 2) {
+    printf("DEBUG: Command line arguments:\n");
+    for (int i = 0; i < argc; i++) {
+      printf("  argv[%d] = '%s'\n", i, argv[i]);
+    }
+    printf("DEBUG: File argument count = %d\n", fileArgCount);
+    printf("DEBUG: ValidationName = '%s'\n", ValidationName);
+  }
 
   initrandom(Value(RandomSeed));
   ReadTrainingSet(TSetName, &TS);
@@ -226,11 +260,32 @@ int main(int argc, char *argv[]) {
     printf("%9.4f ", PrintableError(FinalError, &CB));
   }
 
-  // SaveSolution(CBName, PAName, &TS, &CB, &P);
+  // Calculate Centroid Index if ground truth is provided
+  if (ValidationName[0] != 0x00) {
+    CODEBOOK GT_CB;
+    int ci;
+    
+    if (Value(QuietLevel) >= 2) {
+      printf("Reading validation codebook: %s\n", ValidationName);
+    }
+    
+    ReadCodebook(ValidationName, &GT_CB);
+    ci = CentroidIndex(&CB, &GT_CB);
+    
+    if (Value(QuietLevel) >= 2) {
+      printf("Centroid Index = %d\n", ci);
+    } else {
+      printf("%d ", ci);
+    }
+    
+    FreeCodebook(&GT_CB);
+  } else {
+    if (Value(QuietLevel) >= 2) {
+      printf("No validation file provided\n");
+    }
+  }
 
   if (TS.InputFormat == TXT) {
-    // If input data is in txt format and scaled to integers,
-    // no sense to save in binary format
     SaveCB2TXT(&CB, CBName, TS.MinMax, NULL, NULL);
   } else {
     WriteCodebook(CBName, &CB, Value(OverWrite));
