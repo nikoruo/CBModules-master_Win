@@ -19,11 +19,12 @@
 #endif
 
 #include <time.h>
-#include <values.h>
+#include <limits.h>
 
 #define FACTFILE "cbsplit.fac"
+#define BATCH
 
-#include "parametr.c"
+#include "parametr.h"
 
 #include "file.h"
 #include "memctrl.h"
@@ -32,6 +33,8 @@
 #include "sortcb.h"
 
 #include "split.h"
+#include "interfc.h" 
+
 
 /*--------------------  Basic type definitions -----------------------*/
 
@@ -195,7 +198,7 @@ int main(int argc, char *argv[]) {
   char PAName[MAXFILENAME] = {0x00};
   SASchedule SAS;
   double FinalError;
-  double watch;
+  long watch;
 
   ParameterInfo paraminfo[3] = {{TSetName, FormatNameTS, 0, INFILE},
                                 {InitialCBName, FormatNameCB, 1, INFILE},
